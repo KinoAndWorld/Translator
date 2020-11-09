@@ -200,7 +200,7 @@ extension HomeController {
                     let path = paths[index - 1]
                     let readFile = TextFile(path: Path(path))
 
-                    let locString = "    case \(key.localizedFormat) = \"\(key)\""
+                    let locString = "    \(comment)    case \(key.localizedFormat) = \"\(key)\""
 
                     do {
                         try result |>> readFile
