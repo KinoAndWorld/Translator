@@ -163,8 +163,15 @@ extension HomeController {
                 }
                 paths.append(localizablePath)
             }
+            
+            let commentKey = "中文"
+            var commentKeyIdx: Int = -1
+            if let findIdx = header.firstIndex(of: commentKey) {
+                commentKeyIdx = findIdx
+            }
 
-            try "struct Localized {\n" |>> swiftFile
+            try "struct Localized {" |>> swiftFile
+            try "  enum App: String {" |>> swiftFile
             while csv.next() != nil {
 
                 var key = ""
@@ -177,12 +184,23 @@ extension HomeController {
 
                     if key.isEmpty { continue }
 
-                    let value = csv[title] ?? ""
-                    let result = "\"\(key)\" = \"\(value)\";"
+                    var value = csv[title] ?? ""
+                    if value.contains("%s") {
+                        value = value.replacingOccurrences(of: "%s", with: "%@")
+                    }
+                    
+                    // 带上注释 注释以[中文]显示
+                    var comment = ""
+                    if commentKeyIdx > 0 {
+                        comment = "// \(csv[commentKey] ?? "")\n"
+                    }
+                    
+                    let result = "\(comment)\"\(key)\" = \"\(value)\";"
+                    
                     let path = paths[index - 1]
                     let readFile = TextFile(path: Path(path))
 
-                    let locString = "   static let \(key.localizedFormat) = \"\(key)\".localized"
+                    let locString = "    case \(key.localizedFormat) = \"\(key)\""
 
                     do {
                         try result |>> readFile
@@ -196,6 +214,7 @@ extension HomeController {
                     }
                 }
             }
+            try "  }" |>> swiftFile
             try "}" |>> swiftFile
 
             debugPrint("---------------------------\n")
